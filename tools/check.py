@@ -161,12 +161,40 @@ def git(repo: str, *args: str) -> str | None:
         return None
 
 
+def _git_credential_token() -> str | None:
+    """Token mà `git` đã dùng sẵn cho github.com, hỏi qua credential helper.
+
+    VÌ SAO CẦN: không đăng nhập thì GitHub cho 60 lần/giờ, và 5 repo × nhiều
+    workflow vượt ngay. Lần chạy thật đầu tiên công cụ này cạn hạn mức rồi in
+    `?` cho toàn bộ mục CI — tức là MÙ, đúng kiểu hỏng nó sinh ra để chặn.
+
+    Không lưu, không in, không ghi ra đâu — chỉ giữ trong bộ nhớ một lần gọi.
+    Nếu máy không có credential helper thì trả None và quay về 60 lần/giờ."""
+    try:
+        r = subprocess.run(["git", "credential", "fill"],
+                           input=b"protocol=https\nhost=github.com\n\n",
+                           capture_output=True, timeout=15)
+        for line in r.stdout.decode("utf-8", "replace").splitlines():
+            if line.startswith("password="):
+                return line.split("=", 1)[1].strip() or None
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
+_TOKEN: str | None = None
+_TOKEN_TRIED = False
+
+
 def gh_api(url: str):
+    global _TOKEN, _TOKEN_TRIED
     h = {"User-Agent": "stock-check", "Accept": "application/vnd.github+json"}
-    # Không đăng nhập thì GitHub cho 60 lần/giờ — 5 repo × nhiều workflow là
-    # vượt ngay. Có token thì 5000. Chỉ đọc từ env, không bao giờ ghi ra đâu.
-    if (tok := os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")):
-        h["Authorization"] = f"Bearer {tok}"
+    if not _TOKEN_TRIED:
+        _TOKEN_TRIED = True
+        _TOKEN = (os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+                  or _git_credential_token())
+    if _TOKEN:
+        h["Authorization"] = f"Bearer {_TOKEN}"
     req = urllib.request.Request(url, headers=h)
     with urllib.request.urlopen(req, timeout=25) as f:
         return json.load(f)
