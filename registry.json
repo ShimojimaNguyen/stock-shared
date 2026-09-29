@@ -1,9 +1,11 @@
 {
   "_doc": "NGUỒN SỰ THẬT cho lớp chung Stock: repo nào, sản phẩm dữ liệu nào sinh ra artifact nào, nhịp cập nhật bao lâu. hooks/ và tools/ đọc file này lúc chạy. Sửa ở đây, đừng chép danh sách sang chỗ khác — danh sách 'cấm sửa tay' trong CLAUDE.md từng chép tay và thiếu mất 3 file.",
   "version": "0.1.0",
-
   "repos": {
-    "stock-shared": { "role": "lớp chung: skill, agent, hook, công cụ", "main": "main" },
+    "stock-shared": {
+      "role": "lớp chung: skill, agent, hook, công cụ",
+      "main": "main"
+    },
     "vn-market-site": {
       "role": "dashboard thị trường VN + thế giới + lịch sử (7 trang)",
       "main": "main",
@@ -17,19 +19,28 @@
       "build": "npm run build",
       "test": "npm test && npm run typecheck"
     },
-    "jp-market-dashboard": { "role": "dashboard Nhật một file HTML", "main": "main" },
-    "jp_stock_undervaluation": { "role": "công cụ nghiên cứu CrewAI", "main": "main" }
+    "jp-market-dashboard": {
+      "role": "dashboard Nhật một file HTML",
+      "main": "main"
+    },
+    "jp_stock_undervaluation": {
+      "role": "công cụ nghiên cứu CrewAI",
+      "main": "main"
+    }
   },
-
   "_products_doc": "Spine của một sản phẩm dữ liệu: nguồn → fetch → CỔNG → artifact → render → kiểm. `cadence` là nhịp kỳ vọng; `artifacts` là file do script sinh — CẤM sửa tay (hook generated-file-guard cưỡng chế).",
-
   "products": {
     "vn-core": {
       "repo": "vn-market-site",
       "script": "automation/daily_update.py",
       "deps": "stdlib",
       "cadence": "daily",
-      "sources": ["Yahoo Finance", "US Treasury", "VCB", "HNX"],
+      "sources": [
+        "Yahoo Finance",
+        "US Treasury",
+        "VCB",
+        "HNX"
+      ],
       "artifacts": [
         "public/data/live.json",
         "public/data/world-live.json",
@@ -37,23 +48,35 @@
         "public/data/last-run.json",
         "public/data/history/*.jsonl"
       ],
-      "gates": ["quality flag mỗi field (live|proxy|stale|missing)", "idempotent theo date"]
+      "gates": [
+        "quality flag mỗi field (live|proxy|stale|missing)",
+        "idempotent theo date"
+      ]
     },
     "vn-bonds": {
       "repo": "vn-market-site",
       "script": "automation/vn_bond_yields.py",
       "deps": "stdlib",
       "cadence": "weekly",
-      "sources": ["HNX đấu thầu TPCP"],
-      "artifacts": ["public/data/vn-bond-auctions.jsonl"],
-      "gates": ["bỏ đợt trượt thầu (won<=0 hoặc yield<=0)", "upsert theo auction id"]
+      "sources": [
+        "HNX đấu thầu TPCP"
+      ],
+      "artifacts": [
+        "public/data/vn-bond-auctions.jsonl"
+      ],
+      "gates": [
+        "bỏ đợt trượt thầu (won<=0 hoặc yield<=0)",
+        "upsert theo auction id"
+      ]
     },
     "vn-vnstock": {
       "repo": "vn-market-site",
       "script": "automation/sector_flows/ + vn_cashout/ + vn_insight/ + vn_regime/",
       "deps": "vnstock + pandas",
       "cadence": "daily",
-      "sources": ["VCI qua vnstock"],
+      "sources": [
+        "VCI qua vnstock"
+      ],
       "artifacts": [
         "public/data/sector-flows.json",
         "public/data/cashout-vn.json",
@@ -61,7 +84,10 @@
         "public/data/regime.json",
         "public/data/history/regime-*.jsonl"
       ],
-      "gates": ["band insufficient_history khi thiếu lịch sử", "loại kỳ đang tính khỏi percentile"],
+      "gates": [
+        "band insufficient_history khi thiếu lịch sử",
+        "loại kỳ đang tính khỏi percentile"
+      ],
       "install_note": "BẮT BUỘC --extra-index-url https://vnstocks.com/api/simple — vnstock và vnai không còn trên PyPI (404 từ ~2026-09-25). Thiếu cờ này thì pipeline chết im và 3 trang đứng yên."
     },
     "jp-flow": {
@@ -69,27 +95,52 @@
       "script": "scripts/scan.ts",
       "deps": "node stdlib",
       "cadence": "weekly",
-      "sources": ["Yahoo chart v8"],
-      "artifacts": ["data/flow-latest.json"],
-      "gates": ["độ phủ ≥80%", "gross turnover trong dải", "không ghi đè bằng tuần cũ hơn", "--limit ghi ra file sample riêng"]
+      "sources": [
+        "Yahoo chart v8"
+      ],
+      "artifacts": [
+        "data/flow-latest.json"
+      ],
+      "gates": [
+        "độ phủ ≥80%",
+        "gross turnover trong dải",
+        "không ghi đè bằng tuần cũ hơn",
+        "--limit ghi ra file sample riêng"
+      ]
     },
     "jp-universe": {
       "repo": "kiyohara",
       "script": "scripts/build_universe.py",
       "deps": "stdlib",
       "cadence": "monthly",
-      "sources": ["JPX data_j.xlsx"],
-      "artifacts": ["src/lib/screen/universe.ts"],
-      "gates": ["từ chối ghi nếu <400 mã hoặc thiếu cột header"]
+      "sources": [
+        "JPX data_j.xlsx"
+      ],
+      "artifacts": [
+        "src/lib/screen/universe.ts"
+      ],
+      "gates": [
+        "từ chối ghi nếu <400 mã hoặc thiếu cột header"
+      ]
     },
     "jp-fx-roles": {
       "repo": "kiyohara",
       "script": "scripts/build_fx_roles.py",
       "deps": "stdlib + Jev",
       "cadence": "monthly",
-      "sources": ["EDINET 有報", "TypeSafe Jev"],
-      "artifacts": ["src/lib/screen/fx-roles.ts", "data/edinet-index.json"],
-      "gates": ["phủ bằng chứng EDINET ≥60%", "≥400 mã", "--limit ghi ra file sample riêng"],
+      "sources": [
+        "EDINET 有報",
+        "TypeSafe Jev"
+      ],
+      "artifacts": [
+        "src/lib/screen/fx-roles.ts",
+        "data/edinet-index.json"
+      ],
+      "gates": [
+        "phủ bằng chứng EDINET ≥60%",
+        "≥400 mã",
+        "--limit ghi ra file sample riêng"
+      ],
       "status": "chờ EDINET_API_KEY"
     },
     "jp-dashboard": {
@@ -97,13 +148,21 @@
       "script": "automation/fetch_jp_market.py + fetch_jp_investor.py",
       "deps": "stdlib",
       "cadence": "daily",
-      "sources": ["Yahoo JP 売買代金ランキング", "JPX 投資部門別 .xls"],
-      "artifacts": ["data/jp-market.json", "data/jp-investor.json", "data/history/*"],
-      "gates": ["session-advance: không ghi khi nguồn chưa có kỳ mới"],
+      "sources": [
+        "Yahoo JP 売買代金ランキング",
+        "JPX 投資部門別 .xls"
+      ],
+      "artifacts": [
+        "data/jp-market.json",
+        "data/jp-investor.json",
+        "data/history/*"
+      ],
+      "gates": [
+        "session-advance: không ghi khi nguồn chưa có kỳ mới"
+      ],
       "note": "khối 02 và 04 của trang vẫn là preset, đã gắn nhãn trên trang"
     }
   },
-
   "_editable_doc": "File dưới public/data hoặc data/ mà NGƯỜI được sửa tay. Mọi file khác khớp `artifacts` ở trên là do script sinh → hook chặn.",
   "hand_editable": [
     "public/data/grok-fill.json",
@@ -112,20 +171,40 @@
     "public/data/econ-actuals.json",
     "public/data/news.json"
   ],
-
   "pillars": {
-    "_doc": "Tiền tố hai chữ để không đụng pillar một chữ của cx-factory (D/C/U/J/A) vốn cũng nằm ở ~/.claude/skills.",
+    "_doc": "Tiền tố hai chữ để không đụng pillar một chữ của cx-factory (D/C/U/J/A) vốn cũng nằm ở ~/.claude/skills. SV = cơ chế thị trường VN (biên độ, T+2, nhịp công bố margin) — thứ làm đổi CÁCH ĐỌC các chỉ báo VN.",
     "SD": "data-integrity-pillars",
-    "SF": ["financial-analyst-review", "financial-data-verification"],
-    "SJ": "jev-judgments"
+    "SF": [
+      "financial-analyst-review",
+      "financial-data-verification"
+    ],
+    "SJ": "jev-judgments",
+    "SV": "vn-market-mechanics"
   },
-
   "vault": {
     "_doc": "Vault Obsidian của Stock (id 41e39fe10c79563c). KHÁC vault Construction của cx-factory. Cấu trúc đã có sẵn và phân theo thị trường — không áp khuôn zone của factory lên.",
     "path": "Private/HocTap/AI/llm-wiki/wiki",
-    "zones": ["entities/jp", "entities/vn", "entities/us", "JP-Undervalued", "VN-Undervalued", "ADR-Overnight", "concepts", "moc", "summaries"],
-    "frontmatter_required": ["status", "source", "as_of"],
-    "status_values": ["確定", "仮説", "要確認"],
+    "zones": [
+      "entities/jp",
+      "entities/vn",
+      "entities/us",
+      "JP-Undervalued",
+      "VN-Undervalued",
+      "ADR-Overnight",
+      "concepts",
+      "moc",
+      "summaries"
+    ],
+    "frontmatter_required": [
+      "status",
+      "source",
+      "as_of"
+    ],
+    "status_values": [
+      "確定",
+      "仮説",
+      "要確認"
+    ],
     "note": "MCP obsidian-vault ECONNREFUSED ngày 2026-09-29 — phần vault chưa kiểm chứng được qua MCP."
   }
 }
