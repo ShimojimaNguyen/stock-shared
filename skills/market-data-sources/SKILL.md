@@ -258,8 +258,9 @@ chặn sau ~85 mã; trang này thiếu BPS nhưng **cho quét cả universe**.
 | | |
 |---|---|
 | robots.txt (đọc thật 2026-09-29) | chỉ `Disallow: /94446337/` và `/search*`; **`Crawl-delay: 3`** |
-| đo thật | 27,5KB truyền/mã → 492 mã ≈ 13,5MB, ≈ 25 phút ở nhịp 3s |
-| chặn? | **không** — 18 mã liên tiếp ở nhịp 3s, 18/18 HTTP 200 |
+| đo thật | 27,5KB truyền/mã → 492 mã ≈ 13,5MB, **~32 phút** ở nhịp 3s (đo: 1896s và 2256s) |
+| chặn? | **không** — chạy đủ 492 mã HAI LẦN cách nhau 40 phút, cả hai lần 490/492 |
+| lặp lại được? | **có** — hai lần chạy ra cùng độ phủ, cùng 2 mã lỗi, cùng 1 mã gắn cờ |
 | có | `price` · `PER` · `PBR` · `EPS` · **niên độ** · dấu thời gian `<time>` |
 | **không có** | **BPS** |
 
@@ -290,8 +291,30 @@ nhiễu. Nên **đừng trộn hai nguồn vào một bảng** — mỗi bản g
    thành 0 cho ra PER 0, trông như mã cực rẻ. Cùng loại bẫy `isLock` của
    Yahoo, chỉ khác ký tự.
 
-**Niên độ khác nhau giữa các mã** — đã thấy `2026.08`, `2026.12`, `2027.06`,
-`2027.03`. Trường `fiscalPeriod` phải đi kèm từng dòng; gộp chung một kỳ là sai.
+**Bẫy thứ năm — `変` = đổi niên độ, kỳ KHÔNG dài 12 tháng.** Chỉ lộ ra khi
+chạy đủ 492 mã (1/490 mã). `2871` ニチレイ: ô kỳ ghi `予 変 2026.12`, kỳ đó
+dài **9 tháng**. EPS 81,4 là EPS của 9 tháng, còn PER 19,9 nguồn tính trên
+EPS **đã quy năm**: `81,4 × 12/9 = 108,5` → `2159 / 108,5 = 19,9`. Đẳng thức
+ngây thơ ra 26,5, lệch 33%.
+Hai hệ quả: (a) EPS này **không được đứng cạnh** EPS 12 tháng của mã khác mà
+không nhãn — khác đơn vị; (b) đừng tự quy năm, vì quy năm một kỳ chuyển tiếp
+là một **giả định về mùa vụ**, không phải một phép tính.
+
+**Bẫy thứ sáu — nguồn trống vs bố cục đổi.** `7240` ＮＯＫ và `9508` 九州電力
+trả HTTP 200, trang đủ 104KB, đúng tên công ty — nhưng **toàn bộ header là
+`－`**: không sàn, không giá, không vốn hoá. Đó là *nguồn không có dữ liệu*,
+khác hẳn *parser hỏng vì trang đổi markup*. Gộp hai lý do vào một thông báo
+lỗi là cách một thay đổi bố cục đi qua mà không ai biết. Phân biệt bằng: khối
+`PER PBR 利回り 信用倍率` còn không?
+
+**Công ty không công bố dự phóng** — `6861` キーエンス và 25 mã khác: hàng `予`
+toàn `－`. PER và EPS đều `null`. Đây là sự thật của nguồn, không phải lỗi;
+27/490 mã không có PER là bình thường.
+
+**Niên độ khác nhau giữa các mã** — đo trên 490 mã: `2027.03` (380 mã) ·
+`2026.12` (69) · `2027.02` (14) · `2027.06` (6) · `2026.09` (5) · `2026.08` (4).
+Giả định "mọi mã chốt tháng 3" sai với **110 mã**. Trường `fiscalPeriod` phải
+đi kèm từng dòng.
 
 **Cột của bảng 通期業績**: 決算期 · 売上高 · 営業益 · 経常益 · 最終益 ·
 **修正1株益** · 修正1株配 · 発表日 → EPS là `<td>` thứ **5** (index 4).
