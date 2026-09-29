@@ -174,7 +174,32 @@ def gh_api(url: str):
 
 # ------------------------------------------------------------------ các kiểm
 
-def check_freshness(reg: dict, today: dt.date, only: str | None) -> list[dict]:
+def repos_behind(reg: dict, only: str | None) -> dict[str, int]:
+    """Repo nào đang chậm so với origin — và chậm bao nhiêu commit.
+
+    VÌ SAO CẦN: phần đo độ tươi đọc file trong BẢN LÀM VIỆC. Nếu bản đó chậm,
+    công cụ báo tuổi của CHECKOUT chứ không phải tuổi của dữ liệu đã công bố.
+    Đã xảy ra ngay lần chạy thật đầu tiên: `jp-market.json` ở local là 18/09
+    và bị gắn HỎNG 7 phiên, trong khi origin đã có 28/09 — bản local chậm 6
+    commit. Một công cụ giám sát kêu oan sẽ bị tắt, y như một cổng luôn đỏ."""
+    out: dict[str, int] = {}
+    for name in reg["repos"]:
+        if only and name != only:
+            continue
+        repo = os.path.join(STOCK, name)
+        br = git(repo, "branch", "--show-current")
+        if not br or not git(repo, "remote", "get-url", "origin"):
+            continue
+        git(repo, "fetch", "-q", "origin")
+        n = git(repo, "rev-list", "--count", f"{br}..origin/{br}")
+        if n and n.isdigit() and int(n) > 0:
+            out[name] = int(n)
+    return out
+
+
+def check_freshness(reg: dict, today: dt.date, only: str | None,
+                    behind: dict[str, int] | None = None) -> list[dict]:
+    behind = behind or {}
     out = []
     for name, p in reg["products"].items():
         if name.startswith("_"):
@@ -202,9 +227,17 @@ def check_freshness(reg: dict, today: dt.date, only: str | None) -> list[dict]:
                 age = sessions_between(d, today)
                 state = OK if (budget is None or age <= budget) else (
                     BAD if age > (budget or 0) * 2 else WARN)
+                note = (f"{why} = {d} · nhịp {p.get('cadence')} "
+                        f"(ngân sách {budget if budget is not None else '—'} phiên)")
+                if repo in behind and state != OK:
+                    # Hạ cấp xuống "?": chưa biết dữ liệu công bố có cũ không,
+                    # chỉ biết BẢN CHECKOUT NÀY cũ. Nói "HỎNG" ở đây là vu oan.
+                    state = UNK
+                    note += (f" · ⚠ bản local chậm {behind[repo]} commit so với "
+                             f"origin — con số trên là tuổi của CHECKOUT, chưa "
+                             f"chắc là tuổi của dữ liệu đã công bố. `git pull` rồi chạy lại.")
                 out.append({"product": name, "file": rel, "state": state, "age": age,
-                            "why": f"{why} = {d} · nhịp {p.get('cadence')} "
-                                   f"(ngân sách {budget if budget is not None else '—'} phiên)"})
+                            "why": note})
     return out
 
 
@@ -332,8 +365,16 @@ def main() -> int:
 
     bad = warn = unk = 0
 
+    # Phải biết repo nào đang chậm TRƯỚC khi diễn giải tuổi file — nếu không,
+    # con số in ra là tuổi của CHECKOUT chứ không phải tuổi của dữ liệu đã
+    # công bố. Xem repos_behind().
+    behind = {} if a.no_net else repos_behind(reg, a.repo)
+
     print("\n[1/4] Độ tươi artifact — có cũ quá nhịp đã khai không?")
-    rows = check_freshness(reg, today, a.repo)
+    if a.no_net:
+        print("  (--no-net: KHÔNG biết bản local có chậm so với origin không — "
+              "tuổi dưới đây là tuổi của checkout, không phải của dữ liệu đã công bố)")
+    rows = check_freshness(reg, today, a.repo, behind)
     for r in sorted(rows, key=lambda x: (x["state"] != BAD, x["state"] != WARN, x["file"])):
         age = "—" if r["age"] is None else f'{r["age"]}p'
         print(f'  {MARK[r["state"]]} {age:>4}  {r["product"]:<12} {r["file"]:<38} {r["why"]}')

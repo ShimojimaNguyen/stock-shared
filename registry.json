@@ -110,6 +110,29 @@
         "--limit ghi ra file sample riêng"
       ]
     },
+    "jp-valuation": {
+      "repo": "kiyohara",
+      "script": "scripts/fetch_snapshots.ts",
+      "deps": "node stdlib (fetch)",
+      "cadence": "daily",
+      "sources": [
+        "株探 kabutan.jp/stock/finance (mặc định, phủ 99,6% universe)",
+        "Yahoo!ファイナンス finance.yahoo.co.jp/quote (CHỈ tra lẻ — chặn sau ~85 mã)"
+      ],
+      "artifacts": [
+        "data/snapshots-kabutan-latest.json"
+      ],
+      "gates": [
+        "tôn trọng Crawl-delay: 3 mà robots.txt của nguồn tự khai",
+        "trần cứng theo nguồn: Yahoo 60 mã/lần, Kabutan không trần (đã đo)",
+        "độ phủ < 80% thì KHÔNG ghi đè bản cũ",
+        "đẳng thức tại nguồn price/eps≈per, lệch >3% thì gắn cờ chứ không sửa",
+        "`－` và `isLock` thành null, KHÔNG BAO GIỜ 0",
+        "kỳ không dài 12 tháng (変) phải gắn cờ fiscalPeriodIrregular",
+        "BPS null — cấm suy từ giá/PBR (số vòng lại từ chính nó)"
+      ],
+      "note": "Hai nguồn ghi ra HAI file riêng. PER/EPS lệch ~1% có hệ thống giữa hai nguồn (cơ sở số cổ phiếu khác nhau) — trộn vào một bảng là tạo bảng không nguồn nào chịu trách nhiệm."
+    },
     "jp-universe": {
       "repo": "kiyohara",
       "script": "scripts/build_universe.py",
@@ -147,22 +170,36 @@
     },
     "jp-dashboard": {
       "repo": "jp-market-dashboard",
-      "script": "automation/fetch_jp_market.py + fetch_jp_investor.py",
+      "script": "automation/fetch_jp_market.py",
       "deps": "stdlib",
       "cadence": "daily",
       "sources": [
-        "Yahoo JP 売買代金ランキング",
-        "JPX 投資部門別 .xls"
+        "Yahoo JP 売買代金ランキング"
       ],
       "artifacts": [
-        "data/jp-market.json",
-        "data/jp-investor.json",
-        "data/history/*"
+        "data/jp-market.json"
       ],
       "gates": [
         "session-advance: không ghi khi nguồn chưa có kỳ mới"
       ],
       "note": "khối 02 và 04 của trang vẫn là preset, đã gắn nhãn trên trang"
+    },
+    "jp-investor": {
+      "repo": "jp-market-dashboard",
+      "script": "automation/fetch_jp_investor.py",
+      "deps": "stdlib (+ xls_reader tự viết — JPX chỉ có .xls, không có CSV)",
+      "cadence": "weekly",
+      "sources": [
+        "JPX 投資部門別売買状況 .xls"
+      ],
+      "artifacts": [
+        "data/jp-investor.json",
+        "data/history/investor.jsonl"
+      ],
+      "gates": [
+        "session-advance: không ghi khi nguồn chưa có kỳ mới"
+      ],
+      "note": "TÁCH KHỎI jp-dashboard vì nhịp KHÁC: script tự khai 「週次」 và JPX công bố vào TUẦN SAU, nên nó trễ hơn phiên gần nhất theo thiết kế. Gộp chung nhịp daily thì check.py báo HỎNG mỗi tuần — và một cổng luôn đỏ sẽ bị tắt. CHỖ MÙ ĐÃ BIẾT: investor.jsonl không có trường ngày máy đọc được — `week: \"09/07～09/11\"` thiếu năm, `fileStamp: \"260902\"` là năm-tháng-TUẦN chứ không phải YYMMDD. check.py chịu mù ở đây thay vì đoán."
     }
   },
   "_editable_doc": "File dưới public/data hoặc data/ mà NGƯỜI được sửa tay. Mọi file khác khớp `artifacts` ở trên là do script sinh → hook chặn.",
