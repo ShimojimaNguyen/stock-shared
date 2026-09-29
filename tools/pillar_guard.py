@@ -45,6 +45,16 @@ import sys
 import urllib.error
 import urllib.request
 
+# Console Windows mặc định cp932 ở máy này, và báo cáo của công cụ đầy tiếng
+# Việt + tiếng Nhật. Không ép UTF-8 thì `print` ném UnicodeEncodeError và
+# CÔNG CỤ CHẾT GIỮA CHỪNG — người chạy thấy traceback, tưởng repo hỏng, trong
+# khi thứ hỏng là cái máy in. Một cổng chết là một cổng không gác.
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:  # noqa: BLE001  — stream bị thay thế/không hỗ trợ
+        pass
+
 JEV_URL = "https://api.typesafe.ai/v1/systemone"
 # Bắt buộc: thiếu UA thì Cloudflare trả 403 "error code: 1010", trông như lỗi
 # xác thực chứ không phải lỗi client. Xem skill jev-judgments §6.

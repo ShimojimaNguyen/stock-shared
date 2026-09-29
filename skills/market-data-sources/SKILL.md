@@ -222,9 +222,8 @@ Và đó là **chặn kéo dài, không phải cửa sổ tần suất**:
 Nghĩa là một lần quét hàng loạt làm **mất nguồn cho mọi việc khác**, kể cả tra
 một mã lẻ. Thời gian chặn chưa biết — và đừng dò bằng cách gọi thêm.
 
-**Chỉ dùng cho tra lẻ vài mã.** Muốn định giá cả universe thì phải tìm nguồn
-khác (Kabutan có khai `Crawl-delay: 3` nên nhịp đó được phép, nhưng trang
-`/stock/?code=` không có EPS/BPS — chưa thử các trang khác của họ).
+**Chỉ dùng cho tra lẻ vài mã.** Muốn phủ cả universe thì dùng §2.3b
+(Kabutan `/stock/finance`) — đã thử và chạy được.
 
 *Chi phí mỗi mã, nếu vẫn cần biết*: 62,6KB truyền (gzip; 490KB sau giải nén —
 đừng nhầm hai con số, tôi đã nhầm một lần và suýt loại nguồn vì tưởng nặng 250MB).
@@ -249,7 +248,64 @@ và nó cũng chính là thứ phát hiện lỗi dấu phẩy ở trên.
 
 Dùng ở `kiyohara/scripts/fetch_snapshots.ts`.
 
-### 2.3 Kabutan
+### 2.3b Kabutan `/stock/finance` — giá · PER · PBR · EPS ⭐ nguồn phủ nổi cả universe
+
+`https://kabutan.jp/stock/finance?code={code}` · không cần khoá · cần `User-Agent`
+
+Đây là câu trả lời cho khoảng trống mà §2.2b để lại: Yahoo JP đủ trường nhưng
+chặn sau ~85 mã; trang này thiếu BPS nhưng **cho quét cả universe**.
+
+| | |
+|---|---|
+| robots.txt (đọc thật 2026-09-29) | chỉ `Disallow: /94446337/` và `/search*`; **`Crawl-delay: 3`** |
+| đo thật | 27,5KB truyền/mã → 492 mã ≈ 13,5MB, ≈ 25 phút ở nhịp 3s |
+| chặn? | **không** — 18 mã liên tiếp ở nhịp 3s, 18/18 HTTP 200 |
+| có | `price` · `PER` · `PBR` · `EPS` · **niên độ** · dấu thời gian `<time>` |
+| **không có** | **BPS** |
+
+**Đối chiếu chéo với Yahoo JP trên 12 mã trùng** (cùng ngày, 2026-09-29):
+
+| trường | lệch tối đa |
+|---|---|
+| giá | **0,00%** — khớp 12/12 tới từng yên |
+| PBR | 1,19% |
+| PER | 1,75% · EPS 1,52% |
+
+Và `lệch PER ≈ lệch EPS` ở **từng dòng** → lệch **có hệ thống** do cơ sở số cổ
+phiếu khác nhau (Kabutan dùng `修正1株益`, đã điều chỉnh chia tách), không phải
+nhiễu. Nên **đừng trộn hai nguồn vào một bảng** — mỗi bản ghi phải mang
+`source` của chính nó. Ngoại lệ lớn nhất đã thấy: `7203` lệch 3,6% (275,1 vs
+265,55) — ghi lại, chưa giải thích được.
+
+**Bốn bẫy, cả bốn đã cắn:**
+
+1. **Trang không in chữ "EPS"/"BPS"** — nhãn là `修正1株益`. Grep "EPS" ra 0 kết
+   quả và tôi suýt kết luận trang không có dữ liệu. Nó có.
+2. **~26 `<table>`, không cái nào có `id`.** Bảng 通期業績 phải nhận diện bằng
+   tiêu đề: chỉ nó có **đủ ba** chữ `経常益` + `修正` + `発表日`. Các bảng
+   財務指標 / 過去最高 / 半期 / 四半期 đều thiếu ít nhất một.
+3. **`<time datetime>` ở đầu trang là của bảng chỉ số** (日経平均, 米ドル円…),
+   không phải của mã. Phải lấy `<time>` **sát trước** chữ `前日比`.
+4. **Ô trống in `－`, không phải `0`** — mã lỗ hoặc chưa có dự phóng. Đọc
+   thành 0 cho ra PER 0, trông như mã cực rẻ. Cùng loại bẫy `isLock` của
+   Yahoo, chỉ khác ký tự.
+
+**Niên độ khác nhau giữa các mã** — đã thấy `2026.08`, `2026.12`, `2027.06`,
+`2027.03`. Trường `fiscalPeriod` phải đi kèm từng dòng; gộp chung một kỳ là sai.
+
+**Cột của bảng 通期業績**: 決算期 · 売上高 · 営業益 · 経常益 · 最終益 ·
+**修正1株益** · 修正1株配 · 発表日 → EPS là `<td>` thứ **5** (index 4).
+
+**Hàng 予想 thắng hàng 実績**: PER trang in ra được tính từ đúng hàng dự phóng —
+kiểm trên `7203`: `2881,5 / 275,1 = 10,47` → trang in `10,5`. ✓
+
+**⛔ KHÔNG suy `BPS = giá / PBR`.** Đó là số vòng lại từ chính PBR, nên phép
+kiểm đẳng thức sẽ luôn xanh và luôn vô nghĩa. BPS ở nguồn này là `null`, và
+đẳng thức PBR phải ra **"không kiểm được"**.
+
+Dùng ở `kiyohara/scripts/fetch_snapshots.ts --source kabutan` (mặc định).
+
+### 2.3 Kabutan — các trang khác
 
 robots: cho phép, chặn `/search*` và `/94446337/`, **`Crawl-delay: 3`** — phải
 tôn trọng, giãn ≥3,2s.
