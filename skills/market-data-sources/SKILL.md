@@ -190,6 +190,65 @@ cho JP, `.VN` cho VN, không hậu tố cho US. Đã dùng trong
 **`v7/finance/quote?symbols=A,B,C` (lấy nhiều mã 1 request) trả HTTP 401** —
 cần auth, không dùng được. Nên mỗi mã một request.
 
+### 2.2b Yahoo JP trang từng mã — PER / PBR / EPS / BPS ⭐ nguồn duy nhất đủ bốn
+
+`https://finance.yahoo.co.jp/quote/{code}.T` · không cần khoá · cần `User-Agent`
+
+Đã thử **bốn** nguồn cho định giá từng mã (2026-09-29):
+
+| nguồn | kết quả |
+|---|---|
+| Yahoo US `v7/finance/quote` | **401** |
+| Yahoo US `v10/quoteSummary` (4 module) | **401 cả bốn** |
+| Kabutan `/stock/?code=` | 200 nhưng **không có EPS/BPS**, và robots khai `Crawl-delay: 3` → 492 mã ≈ 25 phút |
+| **Yahoo JP `/quote/{code}.T`** | 200, **có đủ** giá · PER · PBR · EPS · BPS |
+
+`robots.txt` cho phép `/quote/` (chỉ chặn `/portfolio`, `/my`, `/cm/*`, ảnh tin),
+**không khai crawl-delay**.
+
+**⛔ KHÔNG LẤY HÀNG LOẠT — đã đo, nguồn chặn sau ~85 mã.**
+
+Chạy thật 492 mã, nghỉ 150ms: **50 mã đầu OK, rồi HTTP 500 liên tục** cho
+407 mã còn lại. Độ phủ 17,3%.
+
+Và đó là **chặn kéo dài, không phải cửa sổ tần suất**:
+
+| thử lại sau khi bị chặn | kết quả |
+|---|---|
+| ngay lập tức, 3 mã | 500 · 500 · 500 |
+| nghỉ 60 giây, 3 mã | 500 · 500 · 500 |
+| giãn 3 giây/request, 6 mã | 500 × 6 |
+
+Nghĩa là một lần quét hàng loạt làm **mất nguồn cho mọi việc khác**, kể cả tra
+một mã lẻ. Thời gian chặn chưa biết — và đừng dò bằng cách gọi thêm.
+
+**Chỉ dùng cho tra lẻ vài mã.** Muốn định giá cả universe thì phải tìm nguồn
+khác (Kabutan có khai `Crawl-delay: 3` nên nhịp đó được phép, nhưng trang
+`/stock/?code=` không có EPS/BPS — chưa thử các trang khác của họ).
+
+*Chi phí mỗi mã, nếu vẫn cần biết*: 62,6KB truyền (gzip; 490KB sau giải nén —
+đừng nhầm hai con số, tôi đã nhầm một lần và suýt loại nguồn vì tưởng nặng 250MB).
+
+**Cách đọc**: dữ liệu nằm trong JSON nhúng có **dấu nháy escape** — gỡ `\"`
+trước, rồi tìm `"per":{…}`, `"pbr"`, `"eps"`, `"bps"`, `"price"`.
+
+**Hai bẫy, cả hai đã cắn:**
+
+1. **`"isLock":true` + `"value":"000.00"`** — trường sau tường phí. Đọc thẳng
+   sẽ ra **PER = 0**, trông như một mã cực rẻ. Mọi trường có `isLock` phải
+   thành `null`.
+2. **Dấu phẩy ngăn nghìn.** `"value":"3,150.60"` — regex `[^",]+` cắt ở dấu
+   phẩy và trả `3`. Không ném lỗi, chỉ ra một con số nhỏ **hợp lý**.
+
+**Kiểm ngay tại nguồn**: `price/eps ≈ per` và `price/bps ≈ pbr`. Đo trên 12 mã:
+**0 mã lệch quá 3%** (Toyota 0,01%). Đây là đường tính thứ hai mà `SD §8` đòi,
+và nó cũng chính là thứ phát hiện lỗi dấu phẩy ở trên.
+
+**Kỳ khác nhau**: PER/EPS thường là 会社予想, PBR/BPS là 実績 — trang ghi trong
+`subText`. Đừng trộn dự phóng với thực hiện trong cùng một bảng.
+
+Dùng ở `kiyohara/scripts/fetch_snapshots.ts`.
+
 ### 2.3 Kabutan
 
 robots: cho phép, chặn `/search*` và `/94446337/`, **`Crawl-delay: 3`** — phải

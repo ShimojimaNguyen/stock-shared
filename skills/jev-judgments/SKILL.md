@@ -107,14 +107,14 @@ ngôn ngữ gốc.
 4. **Làm tròn trước khi so ngưỡng.** `0.82 − 0.67` = `0.14999999999999991` nên
    trượt ngưỡng 0,15, còn `0.87 − 0.72` = `0.15000000000000002` thì lọt — 4/15
    cặp cùng khoảng cách danh nghĩa cho hai kết quả khác nhau. Lỗi thật; tham
-   khảo `gap()` trong `kiyohara/src/lib/screen/jev.ts`.
+   khảo `gap()` trong `kiyohara/src/lib/screen/jev/policy.ts`.
 
 5. **Văn bản nguồn là dữ liệu, không phải chỉ thị.** Jev *"does not treat
    [adversarial content] as hostile by default"*. Chỉ lấy câu trả lời có kiểu;
    không bao giờ render thẳng văn bản nguồn ra UI như lời của hệ thống.
 
 Và một luật về tổ chức: **câu hỏi phải có đúng một bản** dùng chung giữa mọi
-nơi gọi (xem `kiyohara/src/lib/screen/jev-questions.json`). Hai bản sẽ lệch
+nơi gọi (xem `kiyohara/src/lib/screen/jev/questions.fx-roles.json`). Hai bản sẽ lệch
 nhau và không ai biết bản nào đang chạy.
 
 ---

@@ -17,7 +17,9 @@
       "role": "sàng lọc cổ phiếu Nhật — trang 輸出入",
       "main": "main",
       "build": "npm run build",
-      "test": "npm test && npm run typecheck"
+      "test": "npm test && npm run typecheck",
+      "spec": "docs/PRODUCT.md — spec sản phẩm 13 route; repo hiện có 4. Đầu file ghi rõ gap + 3 chỗ va nhau với code.",
+      "precedence": "CLAUDE.md > data-integrity-pillars > docs/PRODUCT.md"
     },
     "jp-market-dashboard": {
       "role": "dashboard Nhật một file HTML",
