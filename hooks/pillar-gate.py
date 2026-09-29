@@ -71,7 +71,18 @@ def win_path(p: str) -> str:
     return f"{m.group(1).upper()}:\\" + m.group(2).replace("/", "\\") if m else p
 
 
-cwd = win_path(payload.get("cwd") or os.getcwd())
+# `cd <path> && git commit` — commit rơi vào ĐÓ, không phải cwd của phiên.
+#
+# Đây là lỗ hổng đã cắn thật ngày 2026-09-29: phiên mở ở vn-market-site, lệnh
+# là `cd .../kiyohara && git commit`. Hook chạy `git diff --cached` ở
+# vn-market-site, thấy trống, cho qua — và một commit mang 3 vi phạm `?? 0`
+# lọt vào kiyohara. Cổng không hỏng; nó soi nhầm thư mục.
+#
+# `branch-check.py` đã giải đúng bài này từ trước; đây là cùng một cách đọc,
+# không phải cách thứ hai.
+_cd = re.search(r"""(?:^|[;&|]\s*)cd\s+(?:"([^"]+)"|'([^']+)'|(\S+))""", cmd)
+_target = next((g for g in (_cd.groups() if _cd else ()) if g), None)
+cwd = win_path(_target or payload.get("cwd") or os.getcwd())
 g = load_guard()
 if g is None:
     sys.exit(0)
