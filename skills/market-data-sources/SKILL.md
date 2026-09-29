@@ -109,6 +109,36 @@ Tier khách = **20 request/phút**, vượt là vnstock **tự dừng tiến tr�
 phải ném exception bắt được). Giãn 3,2s giữa các lần gọi là an toàn. API key
 miễn phí (vnstocks.com/login) nâng lên 60/phút — chưa cấu hình.
 
+#### CÀI ĐẶT: vnstock không còn trên PyPI (đo 2026-09-29)
+
+```bash
+pip install --extra-index-url https://vnstocks.com/api/simple vnstock vnai
+```
+
+Thiếu `--extra-index-url` thì pip báo **`No matching distribution found`**, và
+thông báo đó trông như lỗi mạng chứ không như "gói đã dời kho".
+
+| kiểm | kết quả |
+|---|---|
+| `pypi.org/pypi/vnstock/json` | **404** |
+| `pypi.org/pypi/vnai/json` | **404** |
+| `pypi.org/pypi/pandas/json` | 200 — *đối chứng: PyPI và mạng bình thường* |
+| `pypi.org/pypi/vnstock3/json` | 200 — gói **khác**, đừng nhầm |
+| github.com/thinh-vu/vnstock | 200, còn hoạt động, release v4.0.9 (27/09) |
+
+Giải thật đã kiểm (`--dry-run --ignore-installed`): **39 gói** ·
+`vnstock 4.0.9` + `vnai 2.6.2` từ kho vnstocks · `pandas`/`numpy`/`requests` từ PyPI.
+Không cần API key để **cài**; tier khách vẫn chạy được không khoá.
+
+**Hậu quả thật**: workflow `vn-vnstock-update` đỏ từ 2026-09-25 (lần xanh cuối
+09-24) đúng ở bước cài, và ba trang `regime` / `cashout` / `sector-flows` phục
+vụ số liệu 5 ngày tuổi mà không trang nào nói ra — vì lúc đó chỉ 1/7 trang biết
+tính độ tươi.
+
+> Bài học đo lường: `pip install --dry-run` **không** chứng minh được gì khi gói
+> đã có sẵn trên máy — nó trả "0 gói sẽ cài" và trông như thành công. Phải thêm
+> `--ignore-installed` mới là giải lại từ đầu như CI.
+
 Lớp `Vnstock()` đã **ngừng hỗ trợ từ 2025-08-31**, khuyến nghị chuyển
 `vnstock.api`. Cả 3 script pipeline phụ còn dùng lớp cũ.
 
