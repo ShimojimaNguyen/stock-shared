@@ -11,7 +11,16 @@
       "main": "main",
       "live": "https://tarzanjp.github.io/vn-market-dashboard/",
       "build": "npx vite build",
-      "note": "script chạy hằng ngày tạo nhánh agent/data-YYYY-MM-DD — commit thủ công dễ rơi nhầm nhánh, xem hook branch-check"
+      "note": "script chạy hằng ngày tạo nhánh agent/data-YYYY-MM-DD — commit thủ công dễ rơi nhầm nhánh, xem hook branch-check",
+      "ui": {
+        "tokens": "src/styles/tokens.css",
+        "backgrounds": [
+          "--bg",
+          "--surface",
+          "--fill"
+        ],
+        "note": "CSS thường, token trong :root của styles/tokens.css"
+      }
     },
     "kiyohara": {
       "role": "sàng lọc cổ phiếu Nhật — trang 輸出入",
@@ -19,7 +28,16 @@
       "build": "npm run build",
       "test": "npm test && npm run typecheck",
       "spec": "docs/PRODUCT.md — spec sản phẩm 13 route; repo hiện có 4. Đầu file ghi rõ gap + 3 chỗ va nhau với code.",
-      "precedence": "CLAUDE.md > data-integrity-pillars > docs/PRODUCT.md"
+      "precedence": "CLAUDE.md > data-integrity-pillars > docs/PRODUCT.md",
+      "ui": {
+        "tokens": "src/styles.css",
+        "backgrounds": [
+          "--color-bg",
+          "--color-bg-elevated",
+          "--color-surface"
+        ],
+        "note": "Tailwind v4 @theme — contrast.py đọc được cả hai kiểu"
+      }
     },
     "jp-market-dashboard": {
       "role": "dashboard Nhật một file HTML",
@@ -28,7 +46,8 @@
     "jp_stock_undervaluation": {
       "role": "công cụ nghiên cứu CrewAI",
       "main": "main"
-    }
+    },
+    "_ui_doc": "`ui` là PHẦN CUSTOMIZE của mỗi repo cho tools/contrast.py: file token ở đâu và token nào là NỀN. Bản thân phép kiểm WCAG giống hệt nhau cho mọi thị trường — màu không phụ thuộc thị trường. jp-market-dashboard là một file HTML chưa tách token nên chưa khai; đó là khoảng trống đã biết, không phải 'đạt'."
   },
   "_products_doc": "Spine của một sản phẩm dữ liệu: nguồn → fetch → CỔNG → artifact → render → kiểm. `cadence` là nhịp kỳ vọng; `artifacts` là file do script sinh — CẤM sửa tay (hook generated-file-guard cưỡng chế).",
   "products": {
