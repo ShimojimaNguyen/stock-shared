@@ -17,9 +17,18 @@
         "backgrounds": [
           "--bg",
           "--surface",
+          "--surface-2",
           "--fill"
         ],
-        "note": "CSS thường, token trong :root của styles/tokens.css"
+        "note": "CSS thường, token trong :root của styles/tokens.css",
+        "decorative": [
+          "--flag-us-a",
+          "--flag-us-b",
+          "--flag-vn-a",
+          "--flag-vn-b",
+          "--flag-vn-star"
+        ],
+        "decorative_why": "Màu CỜ của hai huy hiệu US/VN. Trang trí, không bao giờ tô chữ nội dung, nên ngưỡng tương phản chữ không áp. Miễn trừ phải KHAI TÊN ở đây chứ không bỏ qua ngầm — một cổng kêu oan sẽ bị tắt, nhưng một cổng im lặng vì bị tắt ngầm thì tệ hơn."
       }
     },
     "kiyohara": {

@@ -104,13 +104,20 @@ def fix(fg: str, bgs: list[str], target: float) -> str | None:
     return None
 
 
-def audit(path: str, bg_names: list[str], suggest: bool) -> int:
+def audit(path: str, bg_names: list[str], suggest: bool,
+          decorative: list[str] | None = None) -> int:
     tok = parse_tokens(path)
     bgs = {k: tok[k] for k in bg_names if k in tok}
     if not bgs:
         print(f"   không tìm thấy token nền {bg_names} trong {path}")
         return 0
-    fgs = {k: v for k, v in tok.items() if k not in bgs}
+    # Token TRANG TRÍ (màu cờ, hoạ tiết) không bao giờ tô chữ nội dung, nên
+    # ngưỡng chữ không áp. Nhưng miễn trừ phải KHAI TÊN trong registry —
+    # bỏ qua ngầm thì lần sau không ai biết cổng này đang không soi cái gì.
+    skip = set(decorative or [])
+    fgs = {k: v for k, v in tok.items() if k not in bgs and k not in skip}
+    if skip:
+        print(f"   (bỏ qua {len(skip)} token trang trí đã khai: {', '.join(sorted(skip))})")
 
     worst: list[tuple[str, float, str]] = []
     print(f"   {'token chữ':22}{'hex':10}" + "".join(f"{b.replace('--color-', '').replace('--', ''):>13}" for b in bgs))
@@ -159,7 +166,7 @@ def main() -> int:
     targets = []
     if a.file:
         bgs = (a.bg or "--bg,--surface,--fill").split(",")
-        targets.append((a.file, a.file, bgs))
+        targets.append((a.file, a.file, bgs, []))
     else:
         for name, r in reg["repos"].items():
             if name.startswith("_"):
@@ -169,7 +176,7 @@ def main() -> int:
                 continue
             p = os.path.join(STOCK, name, ui["tokens"])
             if os.path.isfile(p):
-                targets.append((name, p, ui["backgrounds"]))
+                targets.append((name, p, ui["backgrounds"], ui.get("decorative") or []))
 
     if not targets:
         print("Không repo nào khai `ui.tokens` trong registry.json — "
@@ -178,9 +185,9 @@ def main() -> int:
 
     print(f"contrast · WCAG 2.2 AA · {len(targets)} bảng màu")
     total = 0
-    for name, p, bgs in targets:
+    for name, p, bgs, deco in targets:
         print(f"\n[{name}] {os.path.relpath(p, STOCK)}")
-        total += audit(p, bgs, a.suggest)
+        total += audit(p, bgs, a.suggest, deco)
     print(f"\n{total} token không đạt 4.5:1 làm chữ thường")
     return 1 if total else 0
 
