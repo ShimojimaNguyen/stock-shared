@@ -212,7 +212,11 @@ def repos_behind(reg: dict, only: str | None) -> dict[str, int]:
     commit. Một công cụ giám sát kêu oan sẽ bị tắt, y như một cổng luôn đỏ."""
     out: dict[str, int] = {}
     for name in reg["repos"]:
-        if only and name != only:
+        # Khoá `_`-mở-đầu là chú thích trong registry, không phải repo. Thiếu
+        # dòng này thì `_ui_doc` bị đếm như một repo và báo "không phải git
+        # repo" — một dòng `?` giả trong bản tổng kết, và `?` giả làm loãng
+        # đúng những dòng `?` thật.
+        if name.startswith("_") or (only and name != only):
             continue
         repo = os.path.join(STOCK, name)
         br = git(repo, "branch", "--show-current")
@@ -272,7 +276,11 @@ def check_freshness(reg: dict, today: dt.date, only: str | None,
 def check_git(reg: dict, only: str | None) -> list[dict]:
     out = []
     for name in reg["repos"]:
-        if only and name != only:
+        # Khoá `_`-mở-đầu là chú thích trong registry, không phải repo. Thiếu
+        # dòng này thì `_ui_doc` bị đếm như một repo và báo "không phải git
+        # repo" — một dòng `?` giả trong bản tổng kết, và `?` giả làm loãng
+        # đúng những dòng `?` thật.
+        if name.startswith("_") or (only and name != only):
             continue
         repo = os.path.join(STOCK, name)
         if not os.path.isdir(os.path.join(repo, ".git")):
@@ -310,7 +318,11 @@ def check_ci(reg: dict, only: str | None) -> list[dict]:
     có lần chạy nào SAU commit đó thì chưa sửa xong, nó chỉ chưa được thử."""
     out = []
     for name in reg["repos"]:
-        if only and name != only:
+        # Khoá `_`-mở-đầu là chú thích trong registry, không phải repo. Thiếu
+        # dòng này thì `_ui_doc` bị đếm như một repo và báo "không phải git
+        # repo" — một dòng `?` giả trong bản tổng kết, và `?` giả làm loãng
+        # đúng những dòng `?` thật.
+        if name.startswith("_") or (only and name != only):
             continue
         repo = os.path.join(STOCK, name)
         url = git(repo, "remote", "get-url", "origin") or ""
